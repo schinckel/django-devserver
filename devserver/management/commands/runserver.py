@@ -6,6 +6,7 @@ from django.core.handlers.wsgi import WSGIHandler
 
 import os
 import re
+import socket
 import sys
 import django
 import SocketServer
