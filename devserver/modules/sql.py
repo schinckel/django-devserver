@@ -32,11 +32,16 @@ except ImportError:
 
 _sql_fields_re = re.compile(r'SELECT .*? FROM')
 _sql_aggregates_re = re.compile(r'SELECT .*?(COUNT|SUM|AVERAGE|MIN|MAX).*? FROM')
-
+_sql_update_re = re.compile(r'UPDATE (.*?) SET (.{125,}?) WHERE')
+_sql_insert_re = re.compile(r'INSERT INTO (.*?) VALUES (.*)')
 
 def truncate_sql(sql, aggregates=True):
     if not aggregates and _sql_aggregates_re.match(sql):
         return sql
+    if _sql_update_re.match(sql):
+        return _sql_update_re.sub(r'UPDATE \1 SET ... WHERE', sql)
+    if _sql_insert_re.match(sql):
+        return _sql_insert_re.sub(r'INSERT INTO \1 VALUES ...', sql)
     return _sql_fields_re.sub('SELECT ... FROM', sql)
 
 # # TODO:This should be set in the toolbar loader as a default and panels should
