@@ -9,6 +9,8 @@ A drop in replacement for Django's built-in runserver command. Features include:
 * Threaded (default) and multi-process development servers.
 * Ability to specify a WSGI application as your target environment.
 
+.. note:: django-devserver works on Django 1.3 and newer
+
 ------------
 Installation
 ------------
@@ -89,7 +91,7 @@ DEVSERVER_MODULES = []
   A list of devserver modules to load.
 
 DEVSERVER_IGNORED_PREFIXES = ['/media', '/uploads']
-  A list of prefixes to surpress and skip process on. By default, ``ADMIN_MEDIA_PREFIX``, ``MEDIA_URL`` and ``STATIC_URL`` (for Django >= 1.3) will be ignored (assuming ``MEDIA_URL`` and ``STATIC_URL`` is relative)::
+  A list of prefixes to surpress and skip process on. By default, ``ADMIN_MEDIA_PREFIX``, ``MEDIA_URL`` and ``STATIC_URL`` (for Django >= 1.3) will be ignored (assuming ``MEDIA_URL`` and ``STATIC_URL`` is relative)
 
 
 -------
@@ -117,6 +119,12 @@ Outputs queries as they happen to the terminal, including time taken.
 Disable SQL query truncation (used in SQLRealTimeModule) with the ``DEVSERVER_TRUNCATE_SQL`` setting::
   
 	DEVSERVER_TRUNCATE_SQL = False
+
+Filter SQL queries with the ``DEVSERVER_FILTER_SQL`` setting::
+  
+	DEVSERVER_FILTER_SQL = (
+		re.compile('djkombu_\w+'),  # Filter all queries related to Celery
+	)
 
 devserver.modules.sql.SQLSummaryModule
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,6 +157,7 @@ When using the decorator, we recommend that rather than import the decoration di
 	        raise ImportError
 	    from devserver.modules.profile import devserver_profile
 	except ImportError:
+	    from functools import wraps
 	    class devserver_profile(object):
 	        def __init__(self, *args, **kwargs):
 	            pass

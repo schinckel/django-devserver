@@ -10,10 +10,11 @@ functionality such as real-time SQL debugging.
 """
 
 __all__ = ('__version__', '__build__', '__docformat__', 'get_revision')
-__version__ = (0, 3, 1)
+__version__ = (0, 7, 0)
 __docformat__ = 'restructuredtext en'
 
 import os
+
 
 def _get_git_revision(path):
     revision_file = os.path.join(path, 'refs', 'heads', 'master')
@@ -24,6 +25,7 @@ def _get_git_revision(path):
         return fh.read().strip()
     finally:
         fh.close()
+
 
 def get_revision():
     """
@@ -38,6 +40,7 @@ def get_revision():
     return None
 
 __build__ = get_revision()
+
 
 def get_version():
     base = '.'.join(map(str, __version__))

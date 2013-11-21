@@ -7,20 +7,22 @@ from datetime import datetime
 import functools
 import gc
 
+
 class ProfileSummaryModule(DevServerModule):
     """
     Outputs a summary of cache events once a response is ready.
     """
 
     logger_name = 'profile'
-    
+
     def process_init(self, request):
         self.start = datetime.now()
 
     def process_complete(self, request):
         duration = datetime.now() - self.start
-        
+
         self.logger.info('Total time to render was %.2fs', ms_from_timedelta(duration) / 1000)
+
 
 class LeftOversModule(DevServerModule):
     """
@@ -29,7 +31,7 @@ class LeftOversModule(DevServerModule):
     # TODO: Not even sure this is correct, but the its a general idea
 
     logger_name = 'profile'
-    
+
     def process_init(self, request):
         gc.enable()
         gc.set_debug(gc.DEBUG_SAVEALL)
@@ -55,7 +57,7 @@ else:
         Outputs a summary of memory usage of the course of a request.
         """
         logger_name = 'profile'
-    
+
         def __init__(self, request):
             super(MemoryUseModule, self).__init__(request)
             self.hpy = hpy()
@@ -73,9 +75,9 @@ try:
     from line_profiler import LineProfiler
 except ImportError:
     import warnings
-    
+
     class LineProfilerModule(DevServerModule):
-        
+
         def __new__(cls, *args, **kwargs):
             warnings.warn('LineProfilerModule requires line_profiler to be installed.')
             return super(LineProfilerModule, cls).__new__(cls)
@@ -83,6 +85,7 @@ except ImportError:
         class devserver_profile(object):
             def __init__(self, follow=[]):
                 pass
+
             def __call__(self, func):
                 return func
 else:
@@ -100,7 +103,7 @@ else:
                 request.devserver_profiler.enable_by_count()
 
         def process_complete(self, request):
-            if hasattr(request,'devserver_profiler_run') and (DEVSERVER_AUTO_PROFILE or request.devserver_profiler_run):
+            if hasattr(request, 'devserver_profiler_run') and (DEVSERVER_AUTO_PROFILE or request.devserver_profiler_run):
                 from cStringIO import StringIO
                 out = StringIO()
                 if (DEVSERVER_AUTO_PROFILE):
@@ -117,22 +120,25 @@ else:
                 if hasattr(cell.cell_contents, 'func_code'):
                     _unwrap_closure_and_profile(profiler, cell.cell_contents)
 
-
     class devserver_profile(object):
         def __init__(self, follow=[]):
             self.follow = follow
-            
+
         def __call__(self, func):
-            def profiled_func(request, *args, **kwargs):
+            def profiled_func(*args, **kwargs):
+                request = args[0]
+                if hasattr(request, 'request'):
+                    # We're decorating a Django class-based-view and the first argument is actually self:
+                    request = args[1]
+
                 try:
                     request.devserver_profiler.add_function(func)
                     request.devserver_profiler_run = True
                     for f in self.follow:
                         request.devserver_profiler.add_function(f)
                     request.devserver_profiler.enable_by_count()
-                    retval = func(request, *args, **kwargs)
+                    return func(*args, **kwargs)
                 finally:
                     request.devserver_profiler.disable_by_count()
-                return retval
-            return functools.wraps(func)(profiled_func)
 
+            return functools.wraps(func)(profiled_func)
